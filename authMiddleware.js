@@ -1,9 +1,7 @@
-const apiKeyStore = require("./apiKeyStore");
+import apiKeys from "./apiKeyStore.js";
 
-module.exports = (req, res, next) => {
+export default function auth(req, res, next) {
   const key = req.headers["x-api-key"];
-  if (!key || !apiKeyStore.isValid(key)) {
-    return res.status(401).json({ error: "Invalid or missing API key" });
-  }
+  if (!key || !apiKeys.includes(key)) return res.status(401).json({ error: "Unauthorized" });
   next();
-};
+}

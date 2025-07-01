@@ -1,24 +1,16 @@
-const express = require("express");
-const apiKeyStore = require("./apiKeyStore");
+import express from "express";
+import { v4 as uuid } from "uuid";
+import fs from "fs";
+import path from "path";
+
 const router = express.Router();
+const file = path.join(process.cwd(), "apiKeyStore.js");
 
-// Create new key
 router.post("/generate-key", (req, res) => {
-  const { owner } = req.body;
-  const key = apiKeyStore.generate(owner || "guest");
-  res.json({ apiKey: key });
+  const newKey = uuid();
+  const content = `export default ${JSON.stringify([...require(file).default, newKey], null, 2)};`;
+  fs.writeFileSync(file, content);
+  res.json({ apiKey: newKey });
 });
 
-// Revoke a key
-router.post("/revoke-key", (req, res) => {
-  const { key } = req.body;
-  apiKeyStore.revoke(key);
-  res.json({ message: "Key revoked" });
-});
-
-// List keys (admin only)
-router.get("/keys", (req, res) => {
-  res.json(apiKeyStore.list());
-});
-
-module.exports = router;
+export default router;
