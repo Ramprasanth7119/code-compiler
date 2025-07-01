@@ -1,10 +1,20 @@
-FROM python:3.10-slim
+FROM ubuntu:22.04
 
-# Set working directory inside container
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+  nodejs \
+  npm \
+  python3 \
+  python3-pip \
+  openjdk-17-jdk \
+  g++
+
+# Set up app directory
 WORKDIR /app
+COPY . .
 
-# Copy the runner script
-COPY runner.py .
+# Install Node dependencies
+RUN npm install
 
-# By default, the container will run runner.py
-CMD ["python3", "runner.py"]
+# Start the app
+CMD ["npm", "start"]

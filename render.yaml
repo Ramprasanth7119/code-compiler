@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: code-executor
+    env: docker
+    plan: free
+    autoDeploy: true
