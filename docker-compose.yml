@@ -1,0 +1,22 @@
+version: "3.8"
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - NODE_ENV=production
+
+  python-runner:
+    build: ./languages/python-runner
+
+  cpp-runner:
+    build: ./languages/cpp-runner
+
+  java-runner:
+    build: ./languages/java-runner
+
+  nodejs-runner:
+    build: ./languages/nodejs-runner
