@@ -1,6 +1,4 @@
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
 const { exec } = require("child_process");
 const auth = require("./authMiddleware");
 const adminRoutes = require("./admin");
@@ -10,6 +8,7 @@ app.use(express.json());
 app.use(auth); // API Key middleware
 app.use("/admin", adminRoutes);
 
+// Map of language config
 const LANG_CONFIG = {
   python: { ext: "py", image: "python-runner" },
   cpp: { ext: "cpp", image: "cpp-runner" },
@@ -17,19 +16,19 @@ const LANG_CONFIG = {
   node: { ext: "js", image: "nodejs-runner" },
 };
 
+// Run code
 app.post("/run", (req, res) => {
   const { code, language } = req.body;
   const config = LANG_CONFIG[language];
   if (!config) return res.status(400).json({ error: "Language not supported" });
 
-  const fileName = `code-${Date.now()}.${config.ext}`;
-  const filePath = path.join(__dirname, fileName);
-  fs.writeFileSync(filePath, code);
+  // Escape double quotes to safely pass code in ENV
+  const escapedCode = code.replace(/"/g, '\\"');
 
-  const dockerCommand = `docker run --rm -v ${filePath}:/app/user_code.${config.ext} --network none -m 128m --cpus="0.5" ${config.image}`;
+  // Pass code via env variable instead of mounting
+  const dockerCommand = `docker run --rm -e CODE="${escapedCode}" --network none -m 128m --cpus="0.5" ${config.image}`;
 
   exec(dockerCommand, (err, stdout, stderr) => {
-    fs.unlinkSync(filePath);
     if (err) return res.json({ error: stderr || err.message });
     res.json({ output: stdout });
   });
