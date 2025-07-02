@@ -9,8 +9,8 @@ const file = path.join(process.cwd(), "apiKeyStore.js");
 
 router.post("/generate-key", (req, res) => {
   const newKey = uuid();
-  const updatedKeys = [...apiKeys, newKey];
-  const content = `export default ${JSON.stringify(updatedKeys, null, 2)};`;
+  const updated = [...apiKeys, newKey];
+  const content = `export default ${JSON.stringify(updated, null, 2)};`;
   fs.writeFileSync(file, content);
   res.json({ apiKey: newKey });
 });

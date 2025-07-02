@@ -8,8 +8,8 @@ import adminRoutes from "./admin.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const app = express();
+
 app.use(express.json());
 app.use(auth);
 app.use("/admin", adminRoutes);
@@ -29,33 +29,42 @@ const LANG_CONFIG = {
   },
   java: {
     ext: "java",
-    cmd: (file) => {
-      const className = path.basename(file, ".java");
-      return `javac ${file} && java -cp . ${className}`;
-    },
+    cmd: (className) => `javac ${className}.java && java -cp . ${className}`,
   },
 };
 
 app.post("/run", async (req, res) => {
-  const { code, language } = req.body;
+  let { code, language } = req.body;
   const config = LANG_CONFIG[language];
   if (!config) return res.status(400).json({ error: "Unsupported language" });
 
-  const filename = `code-${Date.now()}.${config.ext}`;
-  const filepath = path.join(__dirname, filename);
+  let filename = `code-${Date.now()}.${config.ext}`;
+  let filepath = path.join("/tmp", filename);
+
+  // Handle Java filename/class
+  let javaClassName = null;
+  if (language === "java") {
+    javaClassName = `Code${Date.now()}`;
+    code = code.replace(/public\s+class\s+\w+/, `public class ${javaClassName}`);
+    filename = `${javaClassName}.java`;
+    filepath = path.join("/tmp", filename);
+  }
 
   fs.writeFileSync(filepath, code);
 
-  exec(config.cmd(filename), { cwd: __dirname }, (err, stdout, stderr) => {
-    fs.unlinkSync(filepath);
+  const execCmd = language === "java"
+    ? config.cmd(javaClassName)
+    : config.cmd(filepath);
+
+  exec(execCmd, { cwd: "/tmp" }, (err, stdout, stderr) => {
+    try { fs.unlinkSync(filepath); } catch {}
 
     if (language === "cpp") {
-      try { fs.unlinkSync(path.join(__dirname, "output")); } catch {}
+      try { fs.unlinkSync("/tmp/output"); } catch {}
     }
 
     if (language === "java") {
-      const className = path.basename(filename, ".java");
-      try { fs.unlinkSync(`${__dirname}/${className}.class`); } catch {}
+      try { fs.unlinkSync(`/tmp/${javaClassName}.class`); } catch {}
     }
 
     if (err) return res.json({ error: stderr || err.message });
@@ -64,7 +73,7 @@ app.post("/run", async (req, res) => {
 });
 
 app.get("/", (_, res) => {
-  res.send("✅ Code Executor API is running.");
+  res.send("✅ Code Executor API is live.");
 });
 
 app.listen(process.env.PORT || 3000, () => {
