@@ -1,1 +1,1 @@
-export default ["abc123", "your-api-key"];
+export default ["abc123"];

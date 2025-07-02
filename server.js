@@ -25,13 +25,13 @@ const LANG_CONFIG = {
   },
   cpp: {
     ext: "cpp",
-    cmd: (file) => `g++ ${file} -o ${file}.out && ${file}.out`,
+    cmd: (file) => `g++ ${file} -o output && ./output`,
   },
   java: {
     ext: "java",
     cmd: (file) => {
       const className = path.basename(file, ".java");
-      return `javac ${file} && java ${className}`;
+      return `javac ${file} && java -cp . ${className}`;
     },
   },
 };
@@ -48,15 +48,23 @@ app.post("/run", async (req, res) => {
 
   exec(config.cmd(filename), { cwd: __dirname }, (err, stdout, stderr) => {
     fs.unlinkSync(filepath);
-    if (language === "cpp") fs.existsSync(`${filepath}.out`) && fs.unlinkSync(`${filepath}.out`);
+
+    if (language === "cpp") {
+      try { fs.unlinkSync(path.join(__dirname, "output")); } catch {}
+    }
+
     if (language === "java") {
       const className = path.basename(filename, ".java");
-      fs.existsSync(`${__dirname}/${className}.class`) && fs.unlinkSync(`${__dirname}/${className}.class`);
+      try { fs.unlinkSync(`${__dirname}/${className}.class`); } catch {}
     }
 
     if (err) return res.json({ error: stderr || err.message });
     res.json({ output: stdout });
   });
+});
+
+app.get("/", (_, res) => {
+  res.send("✅ Code Executor API is running.");
 });
 
 app.listen(process.env.PORT || 3000, () => {
