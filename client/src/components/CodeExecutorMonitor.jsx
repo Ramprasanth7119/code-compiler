@@ -4,6 +4,7 @@ import { API_KEY, API_URL } from "../config";
 import ExecutionHistory from "./ExecutionHistory";
 import LanguageUsageChart from "./LanguageUsageChart";
 import MetricsPanel from "./MetricsPanel";
+import Editor from "@monaco-editor/react";
 
 const languages = ["python", "node", "cpp", "java"];
 
@@ -12,6 +13,14 @@ const languageSnippets = {
   node: "console.log('Hello from Node.js');",
   cpp: "#include<iostream>\nusing namespace std;\nint main() {\n  cout << \"Hello from C++\" << endl;\n  return 0;\n}",
   java: "public class Hello {\n  public static void main(String[] args) {\n    System.out.println(\"Hello from Java\");\n  }\n}"
+};
+
+// Monaco editor language mapping
+const monacoLanguageMapping = {
+  python: "python",
+  node: "javascript",
+  cpp: "cpp",
+  java: "java"
 };
 
 export default function CodeExecutorMonitor() {
@@ -29,6 +38,18 @@ export default function CodeExecutorMonitor() {
     cpp: 0,
     java: 0
   });
+  const [theme, setTheme] = useState("vs-dark"); // Monaco editor theme
+  
+  // Monaco editor options
+  const editorOptions = {
+    minimap: { enabled: false },
+    fontSize: 14,
+    scrollBeyondLastLine: false,
+    automaticLayout: true,
+    tabSize: 2,
+    formatOnType: true,
+    formatOnPaste: true
+  };
   
   console.log("API Key:", API_KEY);
   console.log("API URL:", API_URL);
@@ -191,12 +212,22 @@ export default function CodeExecutorMonitor() {
 
           <div className="mb-4">
             <label className="block mb-1 font-semibold">Code</label>
-            <textarea
-              rows={14}
+            <Editor
+              height="400px"
+              language={monacoLanguageMapping[language]}
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="w-full p-3 font-mono border rounded"
+              theme={theme}
+              onChange={(value) => setCode(value)}
+              options={editorOptions}
             />
+            <div className="flex justify-between mt-2 mb-2">
+              <button
+                onClick={() => setTheme(theme === "vs-dark" ? "vs-light" : "vs-dark")}
+                className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+              >
+                {theme === "vs-dark" ? "Light Theme" : "Dark Theme"}
+              </button>
+            </div>
             <button
               onClick={runCode}
               disabled={loading || !apiKey.trim()}
